@@ -15,6 +15,12 @@ def create_app(test_config=None):
         DATABASE = os.path.join(app.instance_path, 'flaskr.sqlite'), # join(dirname(dirname(__file__)), "db.sqlite3"),
     )
 
+    app.config["DEBUG"] = True
+    if app.debug:
+        print('running in debug mode')
+    else:
+        print('NOT running in debug mode')
+
     if test_config is None:
         # test x => 기존 instacne config 불러옴
         app.config.from_pyfile('config.py', silent=True)
@@ -26,16 +32,14 @@ def create_app(test_config=None):
         os.makedirs(app.instance_path)
     except OSError:
         pass
-    
-    
-    @app.route('/')
-    def index():
-        username = session.get('username', None)
-        return render_template('main.html', username = username)
 
     # DB 관련 등록
     from . import db
     db.init_app(app)
+
+    # main 관련 등록
+    from . import main
+    app.register_blueprint(main.bp)
 
     # Blueprint "auth" 등록
     from . import auth
