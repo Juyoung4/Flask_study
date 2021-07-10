@@ -1,60 +1,54 @@
 import functools
 
 from flask import Blueprint, flash, g, redirect, render_template, \
-    request, session, url_for, jsonify
+    request, session, url_for, jsonify, current_app
 
 from .models import *
+from .form import *
+from flask_wtf.csrf import CSRFProtect
+
+import logging
 
 bp = Blueprint("auth", __name__, url_prefix = '/auth')
 
 @bp.route('/register', methods = ('GET', 'POST'))
 def register():
     # 회원가입 시 받을 목록 : username, password
+    form = RegisterForm()
+    error = None
+
+    if form.validate_on_submit(): # 내용이 채워져 있는지 아닌지 까지 체크해줌
+        username = form.data.get("username")
+        passwd = form.data.get("passwd")
+
+        if registers(username, passwd):
+            # session 추가
+            session.clear()
+            session['username'] = username
+            return redirect(url_for("auth.login"))
+        else:
+            error = 'User {} is already registered'.format(username)
     
-    # 만약 request.method == post라면(데이터를 받음)
-    if request.method == 'POST':
-        # template에서 받아오는거니까 form 형식
-        username = request.form["username"]
-        passwd = request.form["passwd"]
-
-        error = None
-
-        if not username:
-            error = 'username is required'
-        elif not passwd:
-            error = 'passwd is required'
-        else: # DB에 저장
-            if registers(username, passwd):
-                # session 추가
-                session.clear()
-                session['username'] = username
-                return redirect('auth.login')
-            else:
-                error = 'User {} is already registered'.format(username)
-        
-        if error is not None:
+        if error != None:
+            logging.debug("error!!! : ", error)
             flash(error)
 
-    return render_template('auth/register.html')
+    return render_template('auth/register.html', form=form)
 
 @bp.route("/login", methods=('GET', 'POST'))
 def login():
+    form = LoginForm()
 
-    if request.method == 'POST':
-        username = request.form['username']
-        passwd = request.form['passwd']
+    if form.validate_on_submit():
+        username = form.data.get('username')
+        passwd = form.data.get('passwd')
 
-        if not username:
-            error = 'username is required'
-        elif not passwd:
-            error = 'passwd is required'
-        else: # DB 확인
-            if logins(username, passwd):
-                return redirect(url_for('/'))
-            else:
-                error = 'Incorrect password'
-        flash(error)
-    return render_template('auth/login.html')
+        if logins(username, passwd):
+            return redirect(url_for("main.main"))
+        else:
+            flash("passwod Incorrect")
+
+    return render_template('auth/login.html', form=form)
 
 @bp.before_app_request
 def load_logged_user():
@@ -70,4 +64,4 @@ def load_logged_user():
 @bp.route('/logout', methods=['GET'])
 def logout():
     session.pop('username', None)
-    return redirect(url_for('/'))
+    return redirect(url_for("main.main"))
