@@ -1,0 +1,19 @@
+from dataclasses import dataclass
+from datetime import datetime
+from . import db
+
+
+def get_user_count():
+    cur = db.get_db().execute(
+        """
+        select (select count(*) from users) as users;
+        """
+    )
+    row = cur.fetchone()
+    dbcount = DatabaseCount(row[0])
+    return dbcount
+
+
+@dataclass
+class DatabaseCount:
+    users: int
