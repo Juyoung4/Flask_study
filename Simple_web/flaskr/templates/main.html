@@ -15,9 +15,14 @@
         </div>
         <br>
         <div class=form-group>
+            <a href="/auth/login">로그인</a>
+            <a href="/auth/register">회원가입</a>
+        </div>
+        <br>
+        <div class=form-group>
             {%if username%}
-            {{userid}}<a>님 안녕하세요!</a><br>
-            <a href="/logout">로그아웃</a>
+            {{username}}<a>님 안녕하세요!</a><br>
+            <a href="/auth/logout">로그아웃</a>
             {%endif%}
         </div>
     </div>
